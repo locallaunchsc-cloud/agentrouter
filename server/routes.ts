@@ -97,6 +97,12 @@ export async function registerRoutes(
     const started = Date.now();
     let output = "";
     let success = true;
+    // infra_error = failure caused by our infrastructure (e.g. auth token expiry,
+    // network blip). The agent itself didn't underperform, so reputation MUST NOT
+    // be penalized — that would silently corrupt the ledger every time our creds
+    // rotate. A real agent marketplace would treat infra errors the same way
+    // Stripe treats processor errors: retry, surface to operator, don't charge.
+    let infraError = false;
     try {
       output = await runtime.execute(body.intent, body.input);
       if (!output || output.trim().length === 0) {
@@ -105,15 +111,30 @@ export async function registerRoutes(
       }
     } catch (err: any) {
       success = false;
-      output = `(execution error: ${err?.message ?? String(err)})`;
+      const msg = err?.message ?? String(err);
+      // Heuristic: upstream auth / rate-limit / 5xx = our infra, not agent fault.
+      const status = err?.status ?? err?.response?.status;
+      if (
+        status === 401 ||
+        status === 403 ||
+        status === 429 ||
+        (typeof status === "number" && status >= 500) ||
+        /authentication|session token|api[_ ]key|rate limit|ECONNRESET|ETIMEDOUT/i.test(msg)
+      ) {
+        infraError = true;
+      }
+      output = `(execution error: ${msg})`;
     }
     const latencyMs = Date.now() - started;
 
-    // Update reputation via EMA.
+    // Update reputation via EMA — only when the agent itself is accountable.
     const agentRow = storage.getAgent(winner.id)!;
     const oldRep = agentRow.reputationScore;
-    const newRep = Math.round(emaReputation(oldRep, success ? 1.0 : 0.0) * 10000) / 10000;
-    storage.updateReputation(winner.id, newRep);
+    let newRep = oldRep;
+    if (!infraError) {
+      newRep = Math.round(emaReputation(oldRep, success ? 1.0 : 0.0) * 10000) / 10000;
+      storage.updateReputation(winner.id, newRep);
+    }
 
     // Persist route.
     const routeId = newId("rt");
