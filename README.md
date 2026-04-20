@@ -18,9 +18,20 @@ Think "Uber's matching engine, but for agents."
 
 ## Why
 
-Six agent protocols exist today (A2A, MCP, ACP, UCP, AP2, x402). Each has its own discovery model. None of them answer the question a developer actually cares about: **"Which agent should I send this task to, right now, for this budget?"**
+The payment rails for the agent economy are already built. Coinbase shipped [x402](https://x402.org). Stripe shipped the [Machine Payments Protocol](https://stripe.com/use-cases/ai). Google shipped [AP2](https://ai.google.dev/). Base, Stellar, and Visa are settlement layers. Agents can pay agents — that problem is solved.
 
-Agent registries (a2a.ac, A2ARegistry.org, AgentIndex, Solo.io Gloo) answer _"who exists?"_. RouteFlow answers _"who's best?"_.
+Six agent protocols exist today (A2A, MCP, ACP, UCP, AP2, x402). Each has its own discovery model. Agent registries (a2a.ac, A2ARegistry.org, AgentIndex, Solo.io Gloo) answer _"who exists?"_.
+
+**None of them answer the question a developer actually cares about: "Out of the thousands of agents that can do this task and accept payment, which one should I route to right now?"**
+
+That's the layer RouteFlow owns. We are the intelligent routing and reputation layer that sits on top of the payment rails — picking the winner, executing the task, and writing provable reputation back to the ledger.
+
+Think of the stack as:
+
+- **Settlement:** Base, Stellar, fiat (handled by Stripe/Coinbase/Visa)
+- **Payment protocol:** x402, MPP, AP2 (handled by the protocol consortia)
+- **Routing + reputation:** RouteFlow
+- **Your app**
 
 ## How it ranks
 
@@ -156,11 +167,28 @@ LLM calls require `ANTHROPIC_API_KEY` + `OPENAI_API_KEY` in the env.
 
 ## Roadmap
 
-- Cross-protocol adapters to real A2A / MCP / x402 agent registries
-- Verifiable reputation attestations (signed outcomes, EAS-style)
-- Dispute resolution API — arbitration for agent-executed contracts
+**Shipped (v0):** Cross-protocol routing, scoring, execution, in-memory reputation ledger across 3 live agents (MCP, A2A, x402).
+
+**Next (v1 — 2 weeks):**
+
+- **x402 client integration** — route decisions that pay the winning agent directly via x402 on Base
+- **Stripe MPP client integration** — same for agents in the Stripe/Tempo MPP directory
+- **Routing fee as protocol fee** — 2.5% added to each routed transaction; no custody, no escrow, no KYC
+- **Provable reputation** — reputation updates derived from on-chain settlement events instead of self-reported outcomes
+- **Budget enforcement** — daily caps, spending rules, and SLA-gated retries at the routing layer
+
+**Next (v2 — 4–6 weeks):**
+
+- Public agent onboarding flow — any agent that speaks x402 or MPP can register
 - Streaming execution log via SSE
-- Public agent onboarding flow
+- Verifiable reputation attestations (signed outcomes, EAS-style)
+- Learned scoring weights from observed outcomes
+
+**Not in scope:**
+
+- Payment rails — x402 / MPP already solve this, we use them
+- Custodial wallets — RouteFlow never holds funds
+- KYC / AML — Stripe Connect and Coinbase handle it at the settlement layer
 
 ## Status
 
