@@ -1,11 +1,11 @@
 /**
- * AgentRouter mark — three nodes converging into one.
+ * RouteFlow mark — three nodes converging into one.
  * Geometric, Vignelli-flavored. Works at 24px and 200px, monochrome-first.
  */
 export function Logo({ size = 28 }: { size?: number }) {
   return (
     <svg
-      aria-label="AgentRouter"
+      aria-label="RouteFlow"
       width={size}
       height={size}
       viewBox="0 0 32 32"

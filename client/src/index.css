@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* AgentRouter — dark-first, financial-terminal palette. */
+/* RouteFlow — dark-first, financial-terminal palette. */
 :root {
   --background: 210 27% 6%; /* #0A0E14 */
   --foreground: 210 15% 92%;

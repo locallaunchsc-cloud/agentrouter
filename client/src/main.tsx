@@ -2,7 +2,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
 
-// Force dark theme — AgentRouter is dark-only by design.
+// Force dark theme — RouteFlow is dark-only by design.
 document.documentElement.classList.add("dark");
 
 if (!window.location.hash) {

@@ -1,4 +1,4 @@
-# AgentRouter
+# RouteFlow
 
 **The routing layer for agent protocols.**
 
@@ -10,7 +10,7 @@ One API. Any agent. Any protocol. Trust-scored.
 
 ## What it is
 
-AgentRouter is a cross-protocol routing API for autonomous AI agents. You send an intent, a budget, and an SLA — it picks the best-fit agent across A2A, MCP, ACP, UCP, AP2, and x402 based on capability match, price, latency, and reputation, executes the task, and updates its reputation ledger.
+RouteFlow is a cross-protocol routing API for autonomous AI agents. You send an intent, a budget, and an SLA — it picks the best-fit agent across A2A, MCP, ACP, UCP, AP2, and x402 based on capability match, price, latency, and reputation, executes the task, and updates its reputation ledger.
 
 Think "Uber's matching engine, but for agents."
 
@@ -18,7 +18,7 @@ Think "Uber's matching engine, but for agents."
 
 Six agent protocols exist today (A2A, MCP, ACP, UCP, AP2, x402). Each has its own discovery model. None of them answer the question a developer actually cares about: **"Which agent should I send this task to, right now, for this budget?"**
 
-Agent registries (a2a.ac, A2ARegistry.org, AgentIndex, Solo.io Gloo) answer _"who exists?"_. AgentRouter answers _"who's best?"_.
+Agent registries (a2a.ac, A2ARegistry.org, AgentIndex, Solo.io Gloo) answer _"who exists?"_. RouteFlow answers _"who's best?"_.
 
 ## How it ranks
 
@@ -164,4 +164,4 @@ LLM calls require `ANTHROPIC_API_KEY` + `OPENAI_API_KEY` in the env.
 
 Early. Building in public. Talking to design partners.
 
-— Jay Fisher · [hello@agentrouter.dev](mailto:hello@agentrouter.dev) · [@jayfisher](https://x.com/jayfisher)
+— Jay Fisher · [hello@routeflow.io](mailto:hello@routeflow.io) · [@jayfisher](https://x.com/jayfisher)

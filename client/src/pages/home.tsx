@@ -20,7 +20,7 @@ const PRESETS: Preset[] = [
     label: "Summarize an article",
     intent: "Summarize this article in 3 bullet points",
     input:
-      "The rise of agent-to-agent protocols in 2025 created a coordination problem. A2A from Google emphasizes JSON-RPC discovery. Anthropic MCP focuses on tool-level context. ACP, UCP, AP2, and x402 each carved out niches in payments, commerce, and capability discovery. None of them standardized how an orchestrator chooses among competing agents on price, latency, and trust. AgentRouter fills that gap by acting as a meta-router across all six protocols, scoring candidates on capability match, economic fit, latency SLA, and historical reputation, then executing the chosen agent and feeding outcomes back into a shared reputation ledger.",
+      "The rise of agent-to-agent protocols in 2025 created a coordination problem. A2A from Google emphasizes JSON-RPC discovery. Anthropic MCP focuses on tool-level context. ACP, UCP, AP2, and x402 each carved out niches in payments, commerce, and capability discovery. None of them standardized how an orchestrator chooses among competing agents on price, latency, and trust. RouteFlow fills that gap by acting as a meta-router across all six protocols, scoring candidates on capability match, economic fit, latency SLA, and historical reputation, then executing the chosen agent and feeding outcomes back into a shared reputation ledger.",
     budget: 0.5,
     latency: 15000,
     tags: ["summarization", "english"],
@@ -221,14 +221,14 @@ function Nav({ onTry }: { onTry: () => void }) {
         <div className="flex items-center gap-3">
           <Logo />
           <span className="mono text-[11px] tracking-[0.2em] uppercase text-[hsl(var(--muted-foreground))]">
-            AgentRouter
+            RouteFlow
           </span>
           <span className="chip ml-2">v0.1 · alpha</span>
         </div>
         <div className="flex items-center gap-2">
           <a
             className="btn-ghost hidden sm:inline-flex"
-            href="https://github.com/locallaunchsc-cloud/agentrouter"
+            href="https://github.com/locallaunchsc-cloud/routeflow"
             target="_blank"
             rel="noreferrer"
             data-testid="link-github"
@@ -271,7 +271,7 @@ function Hero({ onTry }: { onTry: () => void }) {
           The routing layer for<br />agent protocols.
         </h1>
         <p className="mt-6 max-w-2xl text-[17px] leading-relaxed text-[hsl(var(--muted-foreground))]">
-          One API. Any agent. Any protocol. Trust-scored. AgentRouter takes an intent,
+          One API. Any agent. Any protocol. Trust-scored. RouteFlow takes an intent,
           ranks candidates across <Mono>A2A</Mono>, <Mono>MCP</Mono>, <Mono>ACP</Mono>,{" "}
           <Mono>UCP</Mono>, <Mono>AP2</Mono>, and <Mono>x402</Mono> on capability, price,
           latency, and reputation — then executes and updates a ledger.
@@ -857,7 +857,7 @@ function WhyThis() {
           />
           <Column
             num="02"
-            title="What AgentRouter does"
+            title="What RouteFlow does"
             bullets={[
               "One endpoint: POST /api/route with intent, budget, SLA, capability tags.",
               "Ranks candidates on capability match · price fit · latency fit · reputation.",
@@ -931,8 +931,8 @@ function Footer() {
           </span>
         </div>
         <div className="flex items-center gap-5 mono text-[11px] text-[hsl(var(--muted-foreground))]">
-          <a href="mailto:hello@agentrouter.dev" className="hover:text-[hsl(var(--primary))]">
-            hello@agentrouter.dev
+          <a href="mailto:hello@routeflow.io" className="hover:text-[hsl(var(--primary))]">
+            hello@routeflow.io
           </a>
           <a
             href="https://x.com/jayfisher"
@@ -943,7 +943,7 @@ function Footer() {
             @jayfisher
           </a>
           <a
-            href="https://github.com/locallaunchsc-cloud/agentrouter"
+            href="https://github.com/locallaunchsc-cloud/routeflow"
             target="_blank"
             rel="noreferrer"
             className="hover:text-[hsl(var(--primary))]"
