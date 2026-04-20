@@ -3,6 +3,14 @@ import { apiRequest } from "@/lib/queryClient";
 import type { RouteResponse, ScoredCandidate } from "@shared/schema";
 import { Logo } from "@/components/Logo";
 
+// ---------- structured log types --------------------------------------------
+// Plain-text segments + an optional semantic class. Rendered via React text
+// nodes (never dangerouslySetInnerHTML) so that user-originated strings such
+// as agent names, error messages, and future agent-registration input cannot
+// become an XSS vector.
+type LogSegment = { text: string; cls?: "ok" | "warn" | "err" };
+type LogEntry = LogSegment[];
+
 // ---------- preset intents --------------------------------------------------
 type Preset = {
   key: string;
@@ -76,7 +84,7 @@ export default function Home() {
   const [tags, setTags] = useState<string[]>(preset.tags);
 
   const [loading, setLoading] = useState(false);
-  const [log, setLog] = useState<string[]>([]);
+  const [log, setLog] = useState<LogEntry[]>([]);
   const [result, setResult] = useState<RouteResponse | null>(null);
   const [pre, setPre] = useState<ScoredCandidate[] | null>(null); // pre-execution scoring preview
   const [error, setError] = useState<string | null>(null);
@@ -118,11 +126,13 @@ export default function Home() {
     };
 
     try {
-      pushLog("→ Opening routing session…");
-      pushLog(`→ Candidate set: 3 agents across A2A, MCP, x402`);
-      pushLog(
-        `→ Scoring on capability · price · latency · reputation (weights 0.35 / 0.20 / 0.15 / 0.30)`,
-      );
+      pushLog([{ text: "→ Opening routing session…" }]);
+      pushLog([{ text: "→ Candidate set: 3 agents across A2A, MCP, x402" }]);
+      pushLog([
+        {
+          text: "→ Scoring on capability · price · latency · reputation (weights 0.35 / 0.20 / 0.15 / 0.30)",
+        },
+      ]);
 
       // Pre-score so the UI shows the candidate table immediately, before the
       // (potentially slow) LLM execution completes.
@@ -136,12 +146,17 @@ export default function Home() {
         if (sjson.selected_agent_id) {
           const winner = sjson.candidates.find((c) => c.id === sjson.selected_agent_id);
           if (winner) {
-            pushLog(
-              `→ Selected <span class="tok-ok">${winner.name}</span> (${winner.protocol}) · score ${winner.score.toFixed(3)}`,
-            );
+            pushLog([
+              { text: "→ Selected " },
+              { text: winner.name, cls: "ok" },
+              { text: ` (${winner.protocol}) · score ${winner.score.toFixed(3)}` },
+            ]);
           }
         } else {
-          pushLog(`✗ <span class="tok-warn">No candidate matches intent + budget + SLA</span>`);
+          pushLog([
+            { text: "✗ " },
+            { text: "No candidate matches intent + budget + SLA", cls: "warn" },
+          ]);
         }
       } catch {
         // non-fatal; continue to /api/route which will surface the real error.
@@ -152,28 +167,36 @@ export default function Home() {
       const json = (await res.json()) as RouteResponse;
       const dt = Math.round(performance.now() - t0);
 
-      pushLog(
-        `→ Dispatching to <span class="tok-ok">${json.selected_agent.name}</span> (${json.selected_agent.protocol})…`,
-      );
-      pushLog(
-        `← Response received in <span class="tok-ok">${fmtMs(json.latency_ms)}</span> (wire: ${fmtMs(dt)})`,
-      );
-      pushLog(
-        `✓ Reputation updated: ${json.reputation_delta.old.toFixed(4)} → <span class="tok-ok">${json.reputation_delta.new.toFixed(4)}</span>`,
-      );
-      pushLog(`✓ route_id = ${json.route_id}`);
+      pushLog([
+        { text: "→ Dispatching to " },
+        { text: json.selected_agent.name, cls: "ok" },
+        { text: ` (${json.selected_agent.protocol})…` },
+      ]);
+      pushLog([
+        { text: "← Response received in " },
+        { text: fmtMs(json.latency_ms), cls: "ok" },
+        { text: ` (wire: ${fmtMs(dt)})` },
+      ]);
+      pushLog([
+        { text: `✓ Reputation updated: ${json.reputation_delta.old.toFixed(4)} → ` },
+        { text: json.reputation_delta.new.toFixed(4), cls: "ok" },
+      ]);
+      pushLog([{ text: `✓ route_id = ${json.route_id}` }]);
 
       setResult(json);
     } catch (e: any) {
       setError(e?.message ?? String(e));
-      pushLog(`✗ <span class="tok-err">error: ${e?.message ?? e}</span>`);
+      pushLog([
+        { text: "✗ " },
+        { text: `error: ${e?.message ?? e}`, cls: "err" },
+      ]);
     } finally {
       setLoading(false);
     }
   }
 
-  function pushLog(line: string) {
-    setLog((l) => [...l, line]);
+  function pushLog(entry: LogEntry) {
+    setLog((l) => [...l, entry]);
   }
 
   const scrollToDemo = () => demoRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -332,7 +355,7 @@ interface DemoProps {
   tags: string[];
   setTags: (t: string[]) => void;
   loading: boolean;
-  log: string[];
+  log: LogEntry[];
   result: RouteResponse | null;
   pre: ScoredCandidate[] | null;
   error: string | null;
@@ -539,7 +562,7 @@ function ResponsePanel({
   loading: boolean;
   result: RouteResponse | null;
   pre: ScoredCandidate[] | null;
-  log: string[];
+  log: LogEntry[];
   error: string | null;
   showJson: boolean;
   setShowJson: (b: boolean) => void;
@@ -583,12 +606,25 @@ function ResponsePanel({
             <div className="flex-1 h-px bg-[hsl(var(--border))]" />
           </div>
           <div className="panel bg-[hsl(var(--surface-2))] p-4 space-y-1">
-            {log.map((line, i) => (
-              <div
-                key={i}
-                className="log-line"
-                dangerouslySetInnerHTML={{ __html: line }}
-              />
+            {log.map((entry, i) => (
+              <div key={i} className="log-line">
+                {entry.map((seg, j) => (
+                  <span
+                    key={j}
+                    className={
+                      seg.cls === "ok"
+                        ? "tok-ok"
+                        : seg.cls === "warn"
+                        ? "tok-warn"
+                        : seg.cls === "err"
+                        ? "tok-err"
+                        : undefined
+                    }
+                  >
+                    {seg.text}
+                  </span>
+                ))}
+              </div>
             ))}
             {loading && (
               <div className="log-line">
