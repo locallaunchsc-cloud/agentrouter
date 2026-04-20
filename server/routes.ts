@@ -41,6 +41,28 @@ export async function registerRoutes(
     res.json({ routes: storage.recentRoutes(20) });
   });
 
+  // ---- Score-only (no execution) — used by UI to render the candidate table
+  //      before the (potentially slow) LLM call finishes.
+  app.post("/api/score", (req: Request, res: Response) => {
+    const parsed = routeRequestSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "invalid_request", detail: parsed.error.flatten() });
+    }
+    const body = parsed.data;
+    const all = storage.listAgents();
+    const candidates = rankAgents(all, {
+      intent: body.intent,
+      capability_tags: body.capability_tags,
+      budget_usd: body.budget_usd,
+      max_latency_ms: body.max_latency_ms,
+    });
+    res.json({
+      candidates,
+      scoring_weights: SCORING_WEIGHTS,
+      selected_agent_id: candidates[0]?.id ?? null,
+    });
+  });
+
   // ---- The core: route an intent to the best-fit agent --------------------
   app.post("/api/route", async (req: Request, res: Response) => {
     const parsed = routeRequestSchema.safeParse(req.body);

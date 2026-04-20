@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { apiRequest } from "@/lib/queryClient";
 import type { RouteResponse, ScoredCandidate } from "@shared/schema";
 import { Logo } from "@/components/Logo";
@@ -118,13 +118,34 @@ export default function Home() {
     };
 
     try {
-      // 1. Immediately fetch candidates for pre-score preview (scoring-only, no exec).
-      //    We use /api/agents and compute locally for snappier UX.
       pushLog("→ Opening routing session…");
       pushLog(`→ Candidate set: 3 agents across A2A, MCP, x402`);
       pushLog(
         `→ Scoring on capability · price · latency · reputation (weights 0.35 / 0.20 / 0.15 / 0.30)`,
       );
+
+      // Pre-score so the UI shows the candidate table immediately, before the
+      // (potentially slow) LLM execution completes.
+      try {
+        const sres = await apiRequest("POST", "/api/score", body);
+        const sjson = (await sres.json()) as {
+          candidates: ScoredCandidate[];
+          selected_agent_id: string | null;
+        };
+        setPre(sjson.candidates);
+        if (sjson.selected_agent_id) {
+          const winner = sjson.candidates.find((c) => c.id === sjson.selected_agent_id);
+          if (winner) {
+            pushLog(
+              `→ Selected <span class="tok-ok">${winner.name}</span> (${winner.protocol}) · score ${winner.score.toFixed(3)}`,
+            );
+          }
+        } else {
+          pushLog(`✗ <span class="tok-warn">No candidate matches intent + budget + SLA</span>`);
+        }
+      } catch {
+        // non-fatal; continue to /api/route which will surface the real error.
+      }
 
       const t0 = performance.now();
       const res = await apiRequest("POST", "/api/route", body);
@@ -178,6 +199,7 @@ export default function Home() {
         loading={loading}
         log={log}
         result={result}
+        pre={pre}
         error={error}
         onRun={runRoute}
         showJson={showJson}
@@ -308,6 +330,7 @@ interface DemoProps {
   loading: boolean;
   log: string[];
   result: RouteResponse | null;
+  pre: ScoredCandidate[] | null;
   error: string | null;
   onRun: () => void;
   showJson: boolean;
@@ -432,6 +455,7 @@ function Demo(p: DemoProps) {
             <ResponsePanel
               loading={p.loading}
               result={p.result}
+              pre={p.pre}
               log={p.log}
               error={p.error}
               showJson={p.showJson}
@@ -502,6 +526,7 @@ function TagInput({ value, onChange }: { value: string[]; onChange: (t: string[]
 function ResponsePanel({
   loading,
   result,
+  pre,
   log,
   error,
   showJson,
@@ -509,6 +534,7 @@ function ResponsePanel({
 }: {
   loading: boolean;
   result: RouteResponse | null;
+  pre: ScoredCandidate[] | null;
   log: string[];
   error: string | null;
   showJson: boolean;
@@ -518,10 +544,13 @@ function ResponsePanel({
     return <EmptyState />;
   }
 
+  const activeCandidates = result?.candidates ?? pre ?? null;
+  const winnerId = result?.selected_agent.id ?? pre?.[0]?.id ?? "";
+
   return (
     <div className="space-y-6">
       {/* Candidates */}
-      {(result || loading) && (
+      {(activeCandidates || loading) && (
         <div>
           <div className="flex items-center gap-2 mb-3">
             <span className="mono text-[10px] uppercase tracking-[0.18em] text-[hsl(var(--muted-foreground))]">
@@ -532,8 +561,8 @@ function ResponsePanel({
               0.35·cap + 0.20·price + 0.15·lat + 0.30·rep
             </span>
           </div>
-          {result ? (
-            <CandidateTable candidates={result.candidates} winnerId={result.selected_agent.id} />
+          {activeCandidates ? (
+            <CandidateTable candidates={activeCandidates} winnerId={winnerId} />
           ) : (
             <SkeletonRows />
           )}
@@ -653,7 +682,7 @@ function CandidateTable({
 }) {
   return (
     <div className="panel overflow-hidden">
-      <div className="grid grid-cols-[minmax(0,2.2fr)_repeat(5,minmax(0,1fr))] gap-2 px-4 py-2 border-b hair mono text-[10px] uppercase tracking-[0.15em] text-[hsl(var(--muted-foreground))]">
+      <div className="grid grid-cols-[minmax(0,2.8fr)_repeat(5,minmax(0,0.85fr))] gap-2 px-4 py-2 border-b hair mono text-[10px] uppercase tracking-[0.15em] text-[hsl(var(--muted-foreground))]">
         <div>Agent · Protocol</div>
         <div className="text-right">Cap</div>
         <div className="text-right">Price</div>
@@ -666,7 +695,7 @@ function CandidateTable({
         return (
           <div
             key={c.id}
-            className={`grid grid-cols-[minmax(0,2.2fr)_repeat(5,minmax(0,1fr))] gap-2 px-4 py-3 border-b hair last:border-b-0 items-center ${
+            className={`grid grid-cols-[minmax(0,2.8fr)_repeat(5,minmax(0,0.85fr))] gap-2 px-4 py-3 border-b hair last:border-b-0 items-center ${
               isWinner ? "winner-row" : ""
             }`}
             data-testid={`row-candidate-${c.id}`}
