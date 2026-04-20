@@ -123,12 +123,16 @@ export function scoreAgent(agent: Agent, req: ScoreInput): ScoredCandidate {
 
 export function rankAgents(all: Agent[], req: ScoreInput): ScoredCandidate[] {
   const scored = all.map((a) => scoreAgent(a, req));
-  // Filter out fully disqualified candidates (zero capability OR over hard caps).
-  const eligible = scored.filter(
-    (c) => c.capability_match > 0 && c.price_fit > 0 && c.latency_fit > 0,
-  );
+  // Hard filter: over-budget or over-SLA agents are disqualified (can't run at all).
+  // We keep zero-capability agents visible so the UI can show WHY they lost —
+  // but they can't win because their final score is dominated by reputation only.
+  const eligible = scored.filter((c) => c.price_fit > 0 && c.latency_fit > 0);
   eligible.sort((a, b) => b.score - a.score);
-  return eligible.slice(0, 5);
+  // Only return agents whose capability match is non-zero at the top — if the
+  // winner has zero capability match, treat as no-match.
+  const top = eligible.slice(0, 5);
+  if (top.length > 0 && top[0].capability_match === 0) return [];
+  return top;
 }
 
 function round3(n: number) {
