@@ -1,5 +1,7 @@
 # RouteFlow
 
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+
 **The routing layer for agent protocols.**
 
 One API. Any agent. Any protocol. Trust-scored.
@@ -163,5 +165,11 @@ LLM calls require `ANTHROPIC_API_KEY` + `OPENAI_API_KEY` in the env.
 ## Status
 
 Early. Building in public. Talking to design partners.
+
+## License
+
+Apache License 2.0 — see [LICENSE](./LICENSE).
+
+Copyright 2026 Jay Fisher.
 
 — Jay Fisher · [hello@routeflow.io](mailto:hello@routeflow.io) · [@jayfisher](https://x.com/jayfisher)
