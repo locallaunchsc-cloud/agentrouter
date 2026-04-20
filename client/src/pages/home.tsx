@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { apiRequest } from "@/lib/queryClient";
 import type { RouteResponse, ScoredCandidate } from "@shared/schema";
 import { Logo } from "@/components/Logo";
@@ -246,7 +246,11 @@ function Nav({ onTry }: { onTry: () => void }) {
 
 // ============================================================================
 function Hero({ onTry }: { onTry: () => void }) {
-  const curl = `curl -sX POST $ENDPOINT/api/route \\
+  const endpoint = useMemo(() => {
+    if (typeof window === "undefined") return "$ENDPOINT";
+    return new URL("port/5000/api/route", window.location.href).toString();
+  }, []);
+  const curl = `curl -sX POST ${endpoint} \\
   -H 'content-type: application/json' \\
   -d '{"intent":"Summarize this article in 3 bullets","input":"...","budget_usd":0.50,"max_latency_ms":15000,"capability_tags":["summarization"]}'`;
   return (
@@ -746,7 +750,15 @@ function SdkBlock({
   showSdk: boolean;
   setShowSdk: (b: boolean) => void;
 }) {
-  const curl = `curl -sX POST https://<your-deployment>/api/route \\
+  // Runtime-built URLs so the copied snippets target THIS deployment.
+  const endpoint = useMemo(() => {
+    if (typeof window === "undefined") return "https://<deployment>";
+    // queryClient uses "port/5000" when deployed; we resolve relative to the page.
+    const base = new URL("port/5000/api/route", window.location.href);
+    return base.toString();
+  }, []);
+
+  const curl = `curl -sX POST ${endpoint} \\
   -H 'content-type: application/json' \\
   -d '{
     "intent": "Summarize this article in 3 bullets",
@@ -757,7 +769,7 @@ function SdkBlock({
   }'`;
 
   const node = `// Node 18+ (native fetch)
-const r = await fetch("https://<your-deployment>/api/route", {
+const r = await fetch(${JSON.stringify(endpoint)}, {
   method: "POST",
   headers: { "content-type": "application/json" },
   body: JSON.stringify({
